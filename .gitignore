@@ -1,0 +1,47 @@
+# Binaries and build artifacts
+/bin/
+/build/
+/dist/
+/out/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Go workspace and coverage
+go.work
+go.work.sum
+coverage*.out
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Logs and temp
+*.log
+/logs/
+/tmp/
+/.cache/
+
+# IDE/editor
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Docker local data (if any)
+.docker/
+docker-data/
+
+# Node (if present)
+node_modules/
+
+

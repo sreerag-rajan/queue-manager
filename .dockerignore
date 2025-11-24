@@ -1,0 +1,17 @@
+**/.git
+**/.gitignore
+**/.DS_Store
+**/node_modules
+**/dist
+**/bin
+**/obj
+**/*.log
+**/.env
+**/.env.*
+**/coverage
+**/.idea
+**/.vscode
+**/.cache
+**/tmp
+
+
