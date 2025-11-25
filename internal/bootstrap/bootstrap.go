@@ -1,8 +1,13 @@
 package bootstrap
 
 import (
+	"fmt"
 	"os"
 	"strings"
+
+	"queue-manager/internal/config"
+	"queue-manager/internal/queue"
+	"queue-manager/internal/queue/rabbitmq"
 )
 
 type Topology struct {
@@ -46,6 +51,22 @@ func LoadTopologyFromEnv() Topology {
 		}
 	}
 	return top
+}
+
+const (
+	ProviderRabbitMQ = "RABBITMQ"
+)
+
+// NewProvider creates a queue provider based on the configuration.
+func NewProvider(cfg config.Config) (queue.Provider, error) {
+	switch cfg.QueueProvider {
+	case ProviderRabbitMQ:
+		return rabbitmq.New(cfg.RabbitAMQPURI), nil
+	case "", "NONE":
+		return nil, nil
+	default:
+		return nil, fmt.Errorf("unsupported QUEUE_PROVIDER: %s", cfg.QueueProvider)
+	}
 }
 
 

@@ -4,6 +4,7 @@ import (
 	"os"
 	"testing"
 
+	"queue-manager/internal/bootstrap"
 	"queue-manager/internal/config"
 )
 
@@ -17,7 +18,7 @@ func TestNewProvider_Rabbit(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	prov, err := NewProvider(cfg)
+	prov, err := bootstrap.NewProvider(cfg)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -32,7 +33,7 @@ func TestNewProvider_Unsupported(t *testing.T) {
 		AppPort: "8080",
 		QueueProvider: "SOMETHING",
 	}
-	if _, err := NewProvider(cfg); err == nil {
+	if _, err := bootstrap.NewProvider(cfg); err == nil {
 		t.Fatalf("expected error for unsupported provider")
 	}
 }
