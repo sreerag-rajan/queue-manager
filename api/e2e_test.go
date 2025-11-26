@@ -11,7 +11,7 @@ import (
 func TestHealthzE2E(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
-	RegisterRoutes(r)
+	RegisterRoutes(r, nil)
 
 	req := httptest.NewRequest(http.MethodGet, "/healthz", nil)
 	w := httptest.NewRecorder()

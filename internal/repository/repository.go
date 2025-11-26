@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"log"
 
 	"queue-manager/internal/models"
 )
@@ -58,7 +59,12 @@ func (r *Repository) ListQueues() ([]models.Queue, error) {
 		queues = append(queues, q)
 	}
 
-	return queues, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	log.Printf("[repository] ListQueues: loaded %d queues from database", len(queues))
+	return queues, nil
 }
 
 // ListExchanges returns all active exchanges from the queue_manager schema
@@ -104,7 +110,12 @@ func (r *Repository) ListExchanges() ([]models.Exchange, error) {
 		exchanges = append(exchanges, e)
 	}
 
-	return exchanges, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	log.Printf("[repository] ListExchanges: loaded %d exchanges from database", len(exchanges))
+	return exchanges, nil
 }
 
 // ListBindings returns all active bindings from the queue_manager schema
@@ -149,7 +160,12 @@ func (r *Repository) ListBindings() ([]models.Binding, error) {
 		bindings = append(bindings, b)
 	}
 
-	return bindings, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	log.Printf("[repository] ListBindings: loaded %d bindings from database", len(bindings))
+	return bindings, nil
 }
 
 // ListServiceAssignments returns all active service assignments from the queue_manager schema
@@ -267,5 +283,74 @@ func (r *Repository) GetExchangeByName(name string) (*models.Exchange, error) {
 	}
 
 	return &e, nil
+}
+
+// QueueWithAssignment represents a queue with its service assignment details
+type QueueWithAssignment struct {
+	Queue           models.Queue
+	PrefetchCount   int
+	MaxInflight     int
+	Notes           string
+	AssignmentUUID  string
+	AssignmentMeta  models.JSONB
+}
+
+// GetQueuesByServiceName returns all queues assigned to a service with their assignment details
+func (r *Repository) GetQueuesByServiceName(serviceName string) ([]QueueWithAssignment, error) {
+	query := `
+		SELECT 
+			q.id, q.uuid, q.created_at, q.updated_at, q.deleted_at, q.meta,
+			q.queue_name, q.durable, q.auto_delete, q.arguments, q.description,
+			sa.prefetch_count, sa.max_inflight, sa.notes, sa.uuid as assignment_uuid, sa.meta as assignment_meta
+		FROM queue_manager.service_assignments sa
+		INNER JOIN queue_manager.queues q ON sa.queue_name = q.queue_name
+		WHERE sa.service_name = $1 
+			AND sa.deleted_at IS NULL 
+			AND q.deleted_at IS NULL
+		ORDER BY q.queue_name
+	`
+	rows, err := r.db.Query(query, serviceName)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []QueueWithAssignment
+	for rows.Next() {
+		var qwa QueueWithAssignment
+		var qDeletedAt sql.NullTime
+
+		err := rows.Scan(
+			&qwa.Queue.ID, &qwa.Queue.UUID, &qwa.Queue.CreatedAt, &qwa.Queue.UpdatedAt, &qDeletedAt,
+			&qwa.Queue.Meta, &qwa.Queue.QueueName, &qwa.Queue.Durable, &qwa.Queue.AutoDelete,
+			&qwa.Queue.Arguments, &qwa.Queue.Description,
+			&qwa.PrefetchCount, &qwa.MaxInflight, &qwa.Notes, &qwa.AssignmentUUID, &qwa.AssignmentMeta,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		if qDeletedAt.Valid {
+			qwa.Queue.DeletedAt = &qDeletedAt.Time
+		}
+		if qwa.Queue.Meta == nil {
+			qwa.Queue.Meta = models.JSONB{}
+		}
+		if qwa.Queue.Arguments == nil {
+			qwa.Queue.Arguments = models.JSONB{}
+		}
+		if qwa.AssignmentMeta == nil {
+			qwa.AssignmentMeta = models.JSONB{}
+		}
+
+		results = append(results, qwa)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	log.Printf("[repository] GetQueuesByServiceName: loaded %d queues for service %s", len(results), serviceName)
+	return results, nil
 }
 

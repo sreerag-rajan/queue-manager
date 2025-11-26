@@ -10,7 +10,7 @@ import (
 
 func TestHealthEndpoint(t *testing.T) {
 	cfg := config.Config{AppHost: "127.0.0.1", AppPort: "0"}
-	s := New(cfg)
+	s := New(cfg, nil)
 
 	req := httptest.NewRequest(http.MethodGet, "/health", nil)
 	w := httptest.NewRecorder()

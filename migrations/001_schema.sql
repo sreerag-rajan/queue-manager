@@ -1,6 +1,8 @@
 -- Migration: Create queue_manager schema, tables, indexes, and triggers
 -- This migration sets up the complete database schema for the queue manager service
 
+BEGIN;
+
 -- Create schema
 CREATE SCHEMA IF NOT EXISTS queue_manager;
 
@@ -26,7 +28,7 @@ CREATE TABLE IF NOT EXISTS queue_manager.queues (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     deleted_at TIMESTAMPTZ DEFAULT NULL,
     meta JSONB DEFAULT '{}'::jsonb,
-    queue_name TEXT NOT NULL,
+    queue_name TEXT NOT NULL UNIQUE,
     durable BOOLEAN NOT NULL DEFAULT true,
     auto_delete BOOLEAN NOT NULL DEFAULT false,
     arguments JSONB DEFAULT '{}'::jsonb,
@@ -58,7 +60,7 @@ CREATE TABLE IF NOT EXISTS queue_manager.exchanges (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     deleted_at TIMESTAMPTZ DEFAULT NULL,
     meta JSONB DEFAULT '{}'::jsonb,
-    exchange_name TEXT NOT NULL,
+    exchange_name TEXT NOT NULL UNIQUE,
     exchange_type TEXT NOT NULL CHECK (exchange_type IN ('direct', 'topic', 'fanout', 'headers')),
     durable BOOLEAN NOT NULL DEFAULT true,
     auto_delete BOOLEAN NOT NULL DEFAULT false,
@@ -169,3 +171,4 @@ CREATE TRIGGER trigger_bindings_updated_at
     FOR EACH ROW
     EXECUTE FUNCTION queue_manager.update_updated_at_column();
 
+COMMIT;

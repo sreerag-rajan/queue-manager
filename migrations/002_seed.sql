@@ -1,6 +1,8 @@
 -- Migration: Seed data for testing and development
 -- This migration inserts example data to verify the service is working properly
 
+BEGIN;
+
 SET search_path TO queue_manager, public;
 
 -- Insert sample exchanges
@@ -48,3 +50,4 @@ INSERT INTO queue_manager.service_assignments (service_name, queue_name, prefetc
     ('monitoring-service', 'dlq.payment.failed', 5, 10, 'Monitor dead letter queue for alerts', '{"team": "platform", "alert": true}'::jsonb)
 ON CONFLICT DO NOTHING;
 
+COMMIT;

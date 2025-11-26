@@ -11,26 +11,26 @@ services:
     restart: unless-stopped
     command: ["/app/server"]
     depends_on:
-      postgres:
-        condition: service_healthy
+      # postgres:
+      #   condition: service_healthy
       rabbitmq:
         condition: service_healthy
 
-  postgres:
-    image: postgres:16
-    environment:
-      POSTGRES_USER: queue
-      POSTGRES_PASSWORD: queue
-      POSTGRES_DB: queue_manager
-    ports:
-      - "5433:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-    volumes:
-      - pgdata:/var/lib/postgresql/data
+  # postgres:
+  #   image: postgres:16
+  #   environment:
+  #     POSTGRES_USER: queue
+  #     POSTGRES_PASSWORD: queue
+  #     POSTGRES_DB: queue_manager
+  #   ports:
+  #     - "5433:5432"
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+  #     interval: 5s
+  #     timeout: 5s
+  #     retries: 10
+  #   volumes:
+  #     - pgdata:/var/lib/postgresql/data
 
   rabbitmq:
     image: rabbitmq:3.13-management
