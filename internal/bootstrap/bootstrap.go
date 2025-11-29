@@ -103,6 +103,9 @@ const (
 func NewProvider(cfg config.Config) (queue.Provider, error) {
 	switch cfg.QueueProvider {
 	case ProviderRabbitMQ:
+		if cfg.RabbitHTTPURI != "" {
+			return rabbitmq.NewWithHTTP(cfg.RabbitAMQPURI, cfg.RabbitHTTPURI), nil
+		}
 		return rabbitmq.New(cfg.RabbitAMQPURI), nil
 	case "", "NONE":
 		return nil, nil

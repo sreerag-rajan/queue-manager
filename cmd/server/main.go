@@ -128,7 +128,7 @@ func main() {
 		}()
 	}
 
-	s := server.New(cfg, repo)
+	s := server.New(cfg, repo, qp)
 	if err := s.Start(); err != nil {
 		log.Fatalf("server error: %v", err)
 	}

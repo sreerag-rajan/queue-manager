@@ -6,6 +6,7 @@ services:
       - APP_HOST=${APP_HOST}
       - APP_PORT=${APP_PORT}
       - POSTGRES_URI=${POSTGRES_URI}
+      - RABBITMQ_HTTP_URI=${RABBITMQ_HTTP_URI}
     ports:
       - "${APP_PORT}:${APP_PORT}"
     restart: unless-stopped

@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/robfig/cron/v3"
-	"queue-manager/internal/bootstrap"
 	"queue-manager/internal/queue"
+	"queue-manager/internal/reconciliation"
 	"queue-manager/internal/repository"
 )
 
@@ -30,7 +30,7 @@ func (s *Scheduler) Start() {
 		return
 	}
 	log.Printf("[cron] scheduler started: periodic health checks every 30s")
-	// Every 30s health check and basic recovery
+	// Every 30s health check and reconciliation
 	_, _ = s.c.AddFunc("@every 30s", func() {
 		log.Printf("[cron] running periodic health check at %s", time.Now().Format(time.RFC3339))
 		hs := s.qp.Health()
@@ -40,28 +40,35 @@ func (s *Scheduler) Start() {
 				log.Printf("[cron] reconnect failed: %v", err)
 				return
 			}
-			// re-declare topology after reconnect (from database if available)
-			if s.repo == nil {
-				log.Printf("[cron] warning: repository not available, skipping topology recovery")
-				return
-			}
-			top, err := bootstrap.LoadTopologyFromDB(s.repo)
+			log.Printf("[cron] reconnected successfully")
+		}
+
+		// Perform reconciliation if provider is healthy and repository is available
+		if hs.OK && s.repo != nil {
+			result, err := reconciliation.ReconcileTopology(s.qp, s.repo, false)
 			if err != nil {
-				log.Printf("[cron] warning: failed to load topology from database during recovery: %v", err)
-				return
+				log.Printf("[cron] reconciliation failed: %v", err)
+			} else {
+				summary := result.Summary()
+				if summary["exchangesCreated"] > 0 || summary["queuesCreated"] > 0 || summary["bindingsCreated"] > 0 ||
+					summary["exchangesDeleted"] > 0 || summary["queuesDeleted"] > 0 || summary["bindingsDeleted"] > 0 {
+					log.Printf("[cron] reconciliation completed: created %d exchanges, %d queues, %d bindings; deleted %d exchanges, %d queues, %d bindings",
+						summary["exchangesCreated"], summary["queuesCreated"], summary["bindingsCreated"],
+						summary["exchangesDeleted"], summary["queuesDeleted"], summary["bindingsDeleted"])
+				} else {
+					log.Printf("[cron] health check passed: queue provider is healthy, topology is in sync")
+				}
+				if len(result.Errors) > 0 {
+					log.Printf("[cron] reconciliation had %d errors", len(result.Errors))
+					for _, errMsg := range result.Errors {
+						log.Printf("[cron] reconciliation error: %s", errMsg)
+					}
+				}
 			}
-			for name, kind := range top.Exchanges {
-				_ = s.qp.DeclareExchange(name, kind, true)
-			}
-			for _, q := range top.Queues {
-				_ = s.qp.DeclareQueue(q, true)
-			}
-			for _, b := range top.Bindings {
-				_ = s.qp.BindQueue(b[0], b[1], b[2])
-			}
-			log.Printf("[cron] recovery completed at %s", time.Now().Format(time.RFC3339))
-		} else {
-			log.Printf("[cron] health check passed: queue provider is healthy")
+		} else if !hs.OK {
+			log.Printf("[cron] health check failed: queue provider is unhealthy, skipping reconciliation")
+		} else if s.repo == nil {
+			log.Printf("[cron] health check passed: queue provider is healthy, but repository not available, skipping reconciliation")
 		}
 	})
 	s.c.Start()
