@@ -4,10 +4,11 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/gin-gonic/gin"
 	"queue-manager/internal/queue"
 	"queue-manager/internal/reconciliation"
 	"queue-manager/internal/repository"
+
+	"github.com/gin-gonic/gin"
 )
 
 type APIResponse struct {
@@ -190,5 +191,3 @@ func syncTopology(repo *repository.Repository, qp queue.Provider) gin.HandlerFun
 		}
 	}
 }
-
-

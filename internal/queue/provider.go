@@ -22,10 +22,8 @@ type Provider interface {
 	ListExchanges() ([]string, error)
 	ListQueues() ([]string, error)
 	ListBindings(queueName string) ([][3]string, error) // returns [queue, exchange, routingKey]
-	
+
 	// Delete resources
 	DeleteQueue(name string) error
 	DeleteExchange(name string) error
 }
-
-

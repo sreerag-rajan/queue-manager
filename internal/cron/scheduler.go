@@ -4,10 +4,11 @@ import (
 	"log"
 	"time"
 
-	"github.com/robfig/cron/v3"
 	"queue-manager/internal/queue"
 	"queue-manager/internal/reconciliation"
 	"queue-manager/internal/repository"
+
+	"github.com/robfig/cron/v3"
 )
 
 type Scheduler struct {
@@ -79,5 +80,3 @@ func (s *Scheduler) Stop() {
 		s.c.Stop()
 	}
 }
-
-
